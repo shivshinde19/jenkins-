@@ -1,74 +1,187 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="en">
 <head>
-
-<title>Deployment Dashboard</title>
+<meta charset="UTF-8">
+<title>DevOps Deployment Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
-body{
-font-family: Arial;
-background: #f4f6f8;
+/* Animated background */
+
+body {
+
+margin:0;
+font-family: "Segoe UI", sans-serif;
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background: linear-gradient(-45deg,#0f2027,#203a43,#2c5364,#1c1c1c);
+background-size:400% 400%;
+animation:bg 10s ease infinite;
+
 }
 
-.box{
+@keyframes bg {
 
-width:400px;
-margin:auto;
-margin-top:100px;
-padding:20px;
-background:white;
-box-shadow:0px 0px 10px gray;
+0%{background-position:0% 50%}
+50%{background-position:100% 50%}
+100%{background-position:0% 50%}
 
 }
 
-input, select, button{
+
+/* Glass container */
+
+.container {
+
+background: rgba(255,255,255,0.05);
+border-radius:20px;
+padding:40px;
+width:380px;
+backdrop-filter: blur(20px);
+box-shadow:0 0 40px rgba(0,255,255,0.2);
+color:white;
+animation:fade 1s;
+
+}
+
+@keyframes fade{
+
+from{opacity:0; transform:translateY(20px)}
+to{opacity:1; transform:translateY(0)}
+
+}
+
+
+h1{
+
+text-align:center;
+margin-bottom:20px;
+background: linear-gradient(90deg,#00ffe7,#00c3ff);
+-webkit-background-clip:text;
+color:transparent;
+
+}
+
+
+/* Inputs */
+
+.input-group{
+
+position:relative;
+margin-bottom:20px;
+
+}
+
+input, select{
 
 width:100%;
-padding:10px;
-margin-top:10px;
+padding:12px;
+border:none;
+border-radius:8px;
+background:rgba(255,255,255,0.1);
+color:white;
+outline:none;
 
 }
+
+label{
+
+position:absolute;
+left:12px;
+top:12px;
+color:#aaa;
+transition:0.3s;
+
+}
+
+input:focus + label,
+input:not(:placeholder-shown) + label{
+
+top:-10px;
+font-size:12px;
+color:#00ffe7;
+
+}
+
+
+/* Buttons */
 
 button{
 
-background:#007bff;
-color:white;
+width:100%;
+padding:12px;
 border:none;
+border-radius:8px;
+margin-top:10px;
+font-size:15px;
 cursor:pointer;
+background: linear-gradient(90deg,#00ffe7,#00c3ff);
+color:black;
+font-weight:bold;
+transition:0.3s;
 
 }
 
 button:hover{
 
-background:#0056b3;
+transform:scale(1.05);
+box-shadow:0 0 20px #00ffe7;
 
 }
 
 .logout{
 
-background:red;
+background: linear-gradient(90deg,#ff416c,#ff4b2b);
+color:white;
 
 }
 
 .logout:hover{
 
-background:darkred;
+box-shadow:0 0 20px #ff416c;
 
 }
 
-#dashboard{
+
+/* Status */
+
+.status{
+
+margin-top:20px;
+padding:15px;
+border-radius:10px;
+background:rgba(0,0,0,0.4);
+
+}
+
+
+/* Status colors */
+
+.success{
+
+color:#00ff9f;
+
+}
+
+.failed{
+
+color:#ff4b2b;
+
+}
+
+.running{
+
+color:#ffd700;
+
+}
+
+
+.hidden{
 
 display:none;
-
-}
-
-#result{
-
-margin-top:15px;
-font-weight:bold;
 
 }
 
@@ -79,19 +192,31 @@ font-weight:bold;
 <body>
 
 
-<!-- LOGIN BOX -->
+<!-- LOGIN -->
 
-<div class="box" id="loginBox">
+<div class="container" id="loginBox">
 
-<h2>Login</h2>
+<h1>DevOps Portal</h1>
 
-<input id="username" placeholder="Username">
+<div class="input-group">
 
-<input id="password" type="password" placeholder="Password">
+<input id="username" placeholder=" ">
+
+<label>Username</label>
+
+</div>
+
+<div class="input-group">
+
+<input id="password" type="password" placeholder=" ">
+
+<label>Password</label>
+
+</div>
 
 <button onclick="login()">Login</button>
 
-<p id="loginMsg" style="color:red;"></p>
+<p id="loginMsg"></p>
 
 </div>
 
@@ -99,19 +224,19 @@ font-weight:bold;
 
 <!-- DASHBOARD -->
 
-<div class="box" id="dashboard">
+<div class="container hidden" id="dashboard">
 
-<h2>Deployment Dashboard</h2>
+<h1>Deployment</h1>
 
 <select id="pipeline"></select>
 
-<button onclick="deploy()">Deploy Pipeline</button>
+<button onclick="deploy()">Deploy</button>
 
-<button onclick="getStatus()">Check Status</button>
+<button onclick="status()">Check Status</button>
 
 <button class="logout" onclick="logout()">Logout</button>
 
-<p id="result"></p>
+<div class="status" id="result"></div>
 
 </div>
 
@@ -120,35 +245,23 @@ font-weight:bold;
 <script>
 
 
-// REPLACE THIS WITH YOUR LAMBDA FUNCTION URL
-
-const URL = "https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/";
+const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/"
 
 
+let USER=""
+let PASS=""
 
-let USER="";
-let PASS="";
-
-
-
-// LOGIN FUNCTION
 
 function login(){
 
-USER = document.getElementById("username").value;
-
-PASS = document.getElementById("password").value;
-
+USER=username.value
+PASS=password.value
 
 fetch(URL,{
 
 method:"POST",
 
-headers:{
-
-"Content-Type":"application/json"
-
-},
+headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
 
@@ -162,89 +275,57 @@ action:"list"
 
 .then(res=>{
 
-
 if(res.status==401){
 
-document.getElementById("loginMsg").innerText="Invalid Login";
-
-return;
+loginMsg.innerHTML="❌ Invalid Login"
+return
 
 }
 
-
-return res.json();
+return res.json()
 
 })
 
 .then(data=>{
 
+if(!data) return
 
-if(!data) return;
+loginBox.classList.add("hidden")
+dashboard.classList.remove("hidden")
 
+pipeline.innerHTML=""
 
-// hide login
+data.forEach(p=>{
 
-document.getElementById("loginBox").style.display="none";
+let option=document.createElement("option")
+option.value=p
+option.text=p
+pipeline.add(option)
 
+})
 
-// show dashboard
-
-document.getElementById("dashboard").style.display="block";
-
-
-// load pipelines
-
-let dropdown = document.getElementById("pipeline");
-
-dropdown.innerHTML="";
-
-
-data.forEach(function(p){
-
-let option=document.createElement("option");
-
-option.value=p;
-
-option.text=p;
-
-dropdown.add(option);
-
-});
-
-
-});
+})
 
 }
 
 
 
-// DEPLOY FUNCTION
-
 function deploy(){
 
-
-let pipeline=document.getElementById("pipeline").value;
-
-
-document.getElementById("result").innerText="Starting build...";
-
+result.innerHTML="<span class='running'>⏳ Deploying...</span>"
 
 fetch(URL,{
 
 method:"POST",
 
-headers:{
-
-"Content-Type":"application/json"
-
-},
+headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
 
 username:USER,
 password:PASS,
 action:"build",
-pipeline:pipeline
+pipeline:pipeline.value
 
 })
 
@@ -254,41 +335,30 @@ pipeline:pipeline
 
 .then(data=>{
 
-document.getElementById("result").innerText=data;
+result.innerHTML="<span class='success'>✅ "+data+"</span>"
 
-});
+})
 
 }
 
 
 
-// STATUS FUNCTION
+function status(){
 
-function getStatus(){
-
-
-let pipeline=document.getElementById("pipeline").value;
-
-
-document.getElementById("result").innerText="Checking status...";
-
+result.innerHTML="<span class='running'>Checking...</span>"
 
 fetch(URL,{
 
 method:"POST",
 
-headers:{
-
-"Content-Type":"application/json"
-
-},
+headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
 
 username:USER,
 password:PASS,
 action:"status",
-pipeline:pipeline
+pipeline:pipeline.value
 
 })
 
@@ -298,45 +368,31 @@ pipeline:pipeline
 
 .then(data=>{
 
+let color="success"
 
-document.getElementById("result").innerHTML=
+if(data.status=="FAILED") color="failed"
+if(data.status==null) color="running"
+
+result.innerHTML=
 
 "Pipeline: "+data.pipeline+
+"<br>Build: "+data.build+
+"<br>Status: <span class='"+color+"'>"+data.status+"</span>"
 
-"<br>Build Number: "+data.build+
-
-"<br>Status: "+data.status;
-
-
-});
+})
 
 }
 
-
-
-// LOGOUT
 
 function logout(){
 
-
-USER="";
-PASS="";
-
-
-document.getElementById("dashboard").style.display="none";
-
-document.getElementById("loginBox").style.display="block";
-
-document.getElementById("result").innerHTML="";
-
+dashboard.classList.add("hidden")
+loginBox.classList.remove("hidden")
 
 }
-
 
 </script>
 
 
-
 </body>
-
 </html>
