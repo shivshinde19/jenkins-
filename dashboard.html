@@ -1,93 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Deployment Dashboard</title>
+
+<style>
+
+body{
+font-family:Segoe UI;
+background:linear-gradient(135deg,#0f2027,#203a43);
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+margin:0;
+}
+
+.box{
+background:rgba(255,255,255,0.05);
+padding:40px;
+border-radius:15px;
+box-shadow:0 0 25px cyan;
+width:500px;
+}
+
+select,button{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:8px;
+}
+
+button{
+background:cyan;
+font-weight:bold;
+cursor:pointer;
+}
+
+.progress-container{
+width:100%;
+background:#333;
+border-radius:10px;
+margin-top:15px;
+}
+
+.progress-bar{
+width:0%;
+height:20px;
+background:orange;
+}
+
+#console{
+background:black;
+margin-top:15px;
+padding:10px;
+height:200px;
+overflow:auto;
+font-size:12px;
+}
+
+.rocket{
+position:absolute;
+bottom:-100px;
+left:50%;
+transform:translateX(-50%);
+font-size:60px;
+opacity:0;
+transition:2s;
+}
+
+.launch{
+bottom:120%;
+opacity:1;
+}
+
+</style>
+</head>
+
+<body>
+
+
+<div class="box">
+
+<h2>Deployment Dashboard</h2>
+
+<select id="pipeline"></select>
+
+<button onclick="deploy()">🚀 Deploy</button>
+
+<button onclick="status()">Check Status</button>
+
+<button onclick="consoleLogs()">Console Logs</button>
+
+<button onclick="logout()">Logout</button>
+
+
+<div class="progress-container">
+
+<div class="progress-bar" id="progressBar"></div>
+
+</div>
+
+
+<p id="result"></p>
+
+<div id="console"></div>
+
+</div>
+
+
+<div class="rocket" id="rocket">🚀</div>
+
+
 <script>
 
-// ✅ FIX 1: Removed extra space from URL
-
-const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/"
+const URL="YOUR_LAMBDA_URL"
 
 
 let username=localStorage.getItem("username")
 let password=localStorage.getItem("password")
 
 
-if(!username){
-
-window.location="index.html"
-
-}
-
-
-
 // Load pipelines
 
 fetch(URL,{
-
 method:"POST",
-
 headers:{"Content-Type":"application/json"},
-
 body:JSON.stringify({
-
-username:username,
-password:password,
-action:"list"
-
+username,password,action:"list"
 })
-
 })
-
 .then(res=>res.json())
-
 .then(data=>{
-
-pipeline.innerHTML=""
-
 data.forEach(p=>{
-
-let option=document.createElement("option")
-
-option.value=p
-option.text=p
-
-pipeline.add(option)
-
+pipeline.add(new Option(p,p))
 })
-
 })
 
 
 
 
-// 🚀 Deploy Pipeline
+// Deploy
 
 function deploy(){
-
-result.innerHTML="⏳ Starting Build..."
 
 progressBar.style.width="10%"
 progressBar.style.background="orange"
 
-
 fetch(URL,{
-
 method:"POST",
-
 headers:{"Content-Type":"application/json"},
-
 body:JSON.stringify({
-
-username:username,
-password:password,
-action:"build",
-pipeline:pipeline.value
-
+username,password,action:"build",pipeline:pipeline.value
 })
-
-})
-
-.then(()=>{
-
-checkProgress()
-
 })
 
 }
@@ -95,143 +161,27 @@ checkProgress()
 
 
 
-// ✅ FIXED progress checker
-
-function checkProgress(){
-
-let progress=20
-
-
-let interval=setInterval(()=>{
-
-
-fetch(URL,{
-
-method:"POST",
-
-headers:{"Content-Type":"application/json"},
-
-body:JSON.stringify({
-
-username:username,
-password:password,
-action:"status",
-pipeline:pipeline.value
-
-})
-
-})
-
-.then(res=>res.json())
-
-.then(data=>{
-
-
-if(data.status==null){
-
-if(progress<90){
-
-progress+=10
-
-progressBar.style.width=progress+"%"
-
-}
-
-result.innerHTML="⏳ Build Running..."
-
-}
-
-
-else{
-
-
-clearInterval(interval)
-
-
-progressBar.style.width="100%"
-
-
-if(data.status=="SUCCESS"){
-
-progressBar.style.background="green"
-
-result.innerHTML="✅ Build Success"
-
-launchRocket()
-
-}
-
-
-else if(data.status=="FAILED"){
-
-progressBar.style.background="red"
-
-result.innerHTML="❌ Build Failed"
-
-}
-
-else{
-
-progressBar.style.background="orange"
-
-result.innerHTML="⏳ Still Running"
-
-}
-
-
-}
-
-
-})
-
-
-},3000)
-
-}
-
-
-
-
-// ✅ FIX 2: Proper status button
+// Status
 
 function status(){
 
-result.innerHTML="Checking Status..."
-
-progressBar.style.width="40%"
-progressBar.style.background="orange"
-
-
 fetch(URL,{
-
 method:"POST",
-
 headers:{"Content-Type":"application/json"},
-
 body:JSON.stringify({
-
-username:username,
-password:password,
-action:"status",
-pipeline:pipeline.value
-
+username,password,action:"status",pipeline:pipeline.value
 })
-
 })
-
 .then(res=>res.json())
-
 .then(data=>{
 
-
 progressBar.style.width="100%"
-
 
 if(data.status=="SUCCESS"){
 
 progressBar.style.background="green"
 
-result.innerHTML="✅ Build Success"
+result.innerHTML="Build Success"
 
 launchRocket()
 
@@ -241,7 +191,7 @@ else if(data.status=="FAILED"){
 
 progressBar.style.background="red"
 
-result.innerHTML="❌ Build Failed"
+result.innerHTML="Build Failed"
 
 }
 
@@ -249,9 +199,32 @@ else{
 
 progressBar.style.background="orange"
 
-result.innerHTML="⏳ Build Running"
+result.innerHTML="Build Running"
 
 }
+
+})
+
+}
+
+
+
+
+// Console Logs
+
+function consoleLogs(){
+
+fetch(URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+username,password,action:"console",pipeline:pipeline.value
+})
+})
+.then(res=>res.text())
+.then(data=>{
+
+console.innerHTML="<pre>"+data+"</pre>"
 
 })
 
@@ -277,8 +250,6 @@ rocket.classList.remove("launch")
 
 
 
-// Logout
-
 function logout(){
 
 localStorage.clear()
@@ -289,3 +260,7 @@ window.location="index.html"
 
 
 </script>
+
+
+</body>
+</html>
