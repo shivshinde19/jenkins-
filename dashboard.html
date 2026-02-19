@@ -1,116 +1,126 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Deployment Dashboard</title>
+
+<title>Production Deployment Portal</title>
 
 <style>
 
 body{
-font-family:Segoe UI;
-background:linear-gradient(135deg,#0f2027,#203a43);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-color:white;
 margin:0;
+font-family:Segoe UI;
+background:#0d1117;
+color:white;
 }
 
-.box{
-background:rgba(255,255,255,0.05);
-padding:40px;
-border-radius:15px;
-box-shadow:0 0 25px cyan;
-width:500px;
+.header{
+background:#161b22;
+padding:15px;
 }
 
-select,button{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:8px;
+.container{
+width:900px;
+margin:auto;
+margin-top:20px;
+}
+
+.card{
+background:#161b22;
+padding:20px;
+margin-top:15px;
 }
 
 button{
-background:cyan;
-font-weight:bold;
+background:#238636;
+color:white;
+padding:10px;
+border:none;
 cursor:pointer;
 }
 
-.progress-container{
-width:100%;
-background:#333;
-border-radius:10px;
-margin-top:15px;
+button:hover{
+background:#2ea043;
 }
 
-.progress-bar{
-width:0%;
+.progress{
+width:100%;
 height:20px;
+background:#333;
+margin-top:10px;
+}
+
+.bar{
+height:20px;
+width:0%;
 background:orange;
 }
 
-#console{
+.success{
+background:#238636;
+}
+
+.failed{
+background:#da3633;
+}
+
+#logs{
 background:black;
-margin-top:15px;
-padding:10px;
-height:200px;
+height:350px;
 overflow:auto;
+padding:10px;
+margin-top:10px;
 font-size:12px;
 }
 
-.rocket{
-position:absolute;
-bottom:-100px;
-left:50%;
-transform:translateX(-50%);
-font-size:60px;
-opacity:0;
-transition:2s;
-}
-
-.launch{
-bottom:120%;
-opacity:1;
-}
-
 </style>
+
 </head>
 
 <body>
 
+<div class="header">
 
-<div class="box">
+🚀 Deployment Portal
 
-<h2>Deployment Dashboard</h2>
+</div>
+
+
+<div class="container">
+
+
+<div class="card">
 
 <select id="pipeline"></select>
 
-<button onclick="deploy()">🚀 Deploy</button>
+<button onclick="deploy()">Deploy</button>
 
-<button onclick="status()">Check Status</button>
+<button onclick="checkStatus()">Status</button>
 
-<button onclick="consoleLogs()">Console Logs</button>
-
-<button onclick="logout()">Logout</button>
+<button onclick="startLogs()">Live Logs</button>
 
 
-<div class="progress-container">
+<div class="progress">
 
-<div class="progress-bar" id="progressBar"></div>
+<div class="bar" id="bar"></div>
 
 </div>
 
 
-<p id="result"></p>
-
-<div id="console"></div>
+<div id="status"></div>
 
 </div>
 
 
-<div class="rocket" id="rocket">🚀</div>
+<div class="card">
+
+<h3>Console Logs</h3>
+
+<div id="logs"></div>
+
+</div>
+
+
+</div>
 
 
 <script>
@@ -121,8 +131,11 @@ const URL="YOUR_LAMBDA_URL"
 let username=localStorage.getItem("username")
 let password=localStorage.getItem("password")
 
+let pointer=0
+let running=false
 
-// Load pipelines
+
+// LOAD PIPELINES
 
 fetch(URL,{
 method:"POST",
@@ -133,20 +146,19 @@ username,password,action:"list"
 })
 .then(res=>res.json())
 .then(data=>{
-data.forEach(p=>{
-pipeline.add(new Option(p,p))
-})
+data.forEach(p=>pipeline.add(new Option(p,p)))
 })
 
 
 
 
-// Deploy
+// DEPLOY
 
 function deploy(){
 
-progressBar.style.width="10%"
-progressBar.style.background="orange"
+status.innerHTML="Starting build"
+
+bar.style.width="10%"
 
 fetch(URL,{
 method:"POST",
@@ -156,14 +168,15 @@ username,password,action:"build",pipeline:pipeline.value
 })
 })
 
+startLogs()
+
 }
 
 
 
+// STATUS
 
-// Status
-
-function status(){
+function checkStatus(){
 
 fetch(URL,{
 method:"POST",
@@ -175,31 +188,28 @@ username,password,action:"status",pipeline:pipeline.value
 .then(res=>res.json())
 .then(data=>{
 
-progressBar.style.width="100%"
-
 if(data.status=="SUCCESS"){
 
-progressBar.style.background="green"
+bar.style.width="100%"
+bar.className="bar success"
 
-result.innerHTML="Build Success"
-
-launchRocket()
+status.innerHTML="SUCCESS"
 
 }
 
 else if(data.status=="FAILED"){
 
-progressBar.style.background="red"
+bar.style.width="100%"
+bar.className="bar failed"
 
-result.innerHTML="Build Failed"
+status.innerHTML="FAILED"
 
 }
 
 else{
 
-progressBar.style.background="orange"
-
-result.innerHTML="Build Running"
+bar.style.width="60%"
+status.innerHTML="RUNNING"
 
 }
 
@@ -209,52 +219,56 @@ result.innerHTML="Build Running"
 
 
 
+// LIVE LOG STREAM
 
-// Console Logs
+function startLogs(){
 
-function consoleLogs(){
+pointer=0
+logs.innerHTML=""
+running=true
+
+stream()
+
+}
+
+
+function stream(){
+
+if(!running) return
+
 
 fetch(URL,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
-username,password,action:"console",pipeline:pipeline.value
+username,password,
+action:"console",
+pipeline:pipeline.value,
+start:pointer
 })
 })
-.then(res=>res.text())
+.then(res=>res.json())
 .then(data=>{
 
-console.innerHTML="<pre>"+data+"</pre>"
+logs.innerHTML+=data.text
+
+logs.scrollTop=logs.scrollHeight
+
+pointer=data.size
+
+if(data.more=="true")
+
+setTimeout(stream,2000)
+
+else{
+
+running=false
+
+checkStatus()
+
+}
 
 })
-
-}
-
-
-
-
-// Rocket
-
-function launchRocket(){
-
-rocket.classList.add("launch")
-
-setTimeout(()=>{
-
-rocket.classList.remove("launch")
-
-},3000)
-
-}
-
-
-
-
-function logout(){
-
-localStorage.clear()
-
-window.location="index.html"
 
 }
 
