@@ -1,150 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-<title>Deployment Portal</title>
+<meta charset="UTF-8">
+<title>DevOps Deployment Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
-/* Background */
+/* SAME PREVIOUS CSS */
 
-body{
+body {
 margin:0;
-font-family:Segoe UI;
-background: linear-gradient(135deg,#141e30,#243b55);
+font-family: "Segoe UI", sans-serif;
 height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-color:white;
+background: linear-gradient(-45deg,#0f2027,#203a43,#2c5364,#1c1c1c);
+background-size:400% 400%;
+animation:bg 10s ease infinite;
 overflow:hidden;
 }
 
-
-/* Container */
-
-.container{
-
-background: rgba(255,255,255,0.05);
-padding:30px;
-border-radius:15px;
-backdrop-filter: blur(20px);
-width:400px;
-box-shadow:0 0 30px cyan;
-
+@keyframes bg {
+0%{background-position:0% 50%}
+50%{background-position:100% 50%}
+100%{background-position:0% 50%}
 }
 
+.container {
+background: rgba(255,255,255,0.05);
+border-radius:20px;
+padding:40px;
+width:380px;
+backdrop-filter: blur(20px);
+box-shadow:0 0 40px rgba(0,255,255,0.2);
+color:white;
+animation:fade 1s;
+}
 
-/* Inputs */
+@keyframes fade{
+from{opacity:0; transform:translateY(20px)}
+to{opacity:1; transform:translateY(0)}
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+background: linear-gradient(90deg,#00ffe7,#00c3ff);
+-webkit-background-clip:text;
+color:transparent;
+}
+
+.input-group{
+position:relative;
+margin-bottom:20px;
+}
 
 input, select{
-
 width:100%;
 padding:12px;
-margin-top:10px;
-border-radius:8px;
 border:none;
+border-radius:8px;
 background:rgba(255,255,255,0.1);
-color:transparent;   /* hidden text */
-text-shadow:0 0 0 transparent;
-
-}
-
-
-/* Show text on hover */
-
-select:hover{
-
 color:white;
-
+outline:none;
 }
-
-
-/* Button */
 
 button{
-
 width:100%;
 padding:12px;
-margin-top:15px;
 border:none;
 border-radius:8px;
-background: linear-gradient(90deg,#00ffe7,#00c3ff);
+margin-top:10px;
+font-size:15px;
 cursor:pointer;
+background: linear-gradient(90deg,#00ffe7,#00c3ff);
+color:black;
 font-weight:bold;
-
+transition:0.3s;
 }
-
 
 button:hover{
-
-box-shadow:0 0 20px cyan;
 transform:scale(1.05);
+box-shadow:0 0 20px #00ffe7;
+}
 
+.logout{
+background: linear-gradient(90deg,#ff416c,#ff4b2b);
+color:white;
+}
+
+.status{
+margin-top:20px;
+padding:15px;
+border-radius:10px;
+background:rgba(0,0,0,0.4);
+}
+
+.hidden{
+display:none;
 }
 
 
-/* Rocket */
+/* 🚀 ROCKET CSS */
 
-.rocket{
+.rocket {
 
 position:absolute;
-bottom:-200px;
+bottom:-100px;
 left:50%;
-font-size:60px;
-transition: all 2s ease;
+transform:translateX(-50%);
+font-size:70px;
 opacity:0;
+transition: all 2s ease;
 
 }
 
+.launch {
 
-/* Launch animation */
-
-.launch{
-
-bottom:110%;
+bottom:120%;
 opacity:1;
 
 }
 
 
-/* Status */
-
-#result{
-
-margin-top:15px;
-
-}
-
 </style>
-
 </head>
-
 <body>
 
 
-<div class="container">
+<!-- LOGIN -->
 
+<div class="container" id="loginBox">
 
-<h2>Deployment Dashboard</h2>
-
+<h1>DevOps Portal</h1>
 
 <input id="username" placeholder="Username">
 
 <input id="password" type="password" placeholder="Password">
 
+<button onclick="login()">Login</button>
 
-<select id="pipeline"></select>
-
-
-<button onclick="deploy()">🚀 Deploy</button>
-
-
-<div id="result"></div>
-
+<p id="loginMsg"></p>
 
 </div>
 
+
+<!-- DASHBOARD -->
+
+<div class="container hidden" id="dashboard">
+
+<h1>Deployment</h1>
+
+<select id="pipeline"></select>
+
+<button onclick="deploy()">Deploy</button>
+
+<button onclick="status()">Check Status</button>
+
+<button class="logout" onclick="logout()">Logout</button>
+
+<div class="status" id="result"></div>
+
+</div>
+
+
+<!-- ROCKET -->
 
 <div class="rocket" id="rocket">🚀</div>
 
@@ -156,23 +178,19 @@ const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/
 
 
 let USER=""
-
 let PASS=""
 
 
-// Load pipelines automatically
+// LOGIN
 
-window.onload=function(){
+function login(){
 
-USER=prompt("Enter Username")
-
-PASS=prompt("Enter Password")
-
+USER=username.value
+PASS=password.value
 
 fetch(URL,{
 
 method:"POST",
-
 headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
@@ -185,10 +203,27 @@ action:"list"
 
 })
 
-.then(res=>res.json())
+.then(res=>{
+
+if(res.status==401){
+
+loginMsg.innerHTML="Invalid Login"
+return
+
+}
+
+return res.json()
+
+})
 
 .then(data=>{
 
+if(!data) return
+
+loginBox.classList.add("hidden")
+dashboard.classList.remove("hidden")
+
+pipeline.innerHTML=""
 
 data.forEach(p=>{
 
@@ -199,19 +234,16 @@ pipeline.add(option)
 
 })
 
-
 })
 
 }
 
 
-
-// Deploy function
+// 🚀 DEPLOY WITH ROCKET
 
 function deploy(){
 
-
-result.innerHTML="⏳ Building..."
+result.innerHTML="Deploying..."
 
 
 fetch(URL,{
@@ -235,30 +267,22 @@ pipeline:pipeline.value
 
 .then(data=>{
 
-
-result.innerHTML="✅ Build Success"
-
+result.innerHTML=data
 
 launchRocket()
 
-
 })
-
 
 }
 
 
-
-// Rocket animation
+// ROCKET FUNCTION
 
 function launchRocket(){
 
-
 let rocket=document.getElementById("rocket")
 
-
 rocket.classList.add("launch")
-
 
 setTimeout(()=>{
 
@@ -266,6 +290,51 @@ rocket.classList.remove("launch")
 
 },3000)
 
+}
+
+
+// STATUS
+
+function status(){
+
+fetch(URL,{
+
+method:"POST",
+
+headers:{"Content-Type":"application/json"},
+
+body:JSON.stringify({
+
+username:USER,
+password:PASS,
+action:"status",
+pipeline:pipeline.value
+
+})
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+result.innerHTML=
+
+"Pipeline: "+data.pipeline+
+"<br>Build: "+data.build+
+"<br>Status: "+data.status
+
+})
+
+}
+
+
+// LOGOUT
+
+function logout(){
+
+dashboard.classList.add("hidden")
+loginBox.classList.remove("hidden")
 
 }
 
@@ -274,5 +343,4 @@ rocket.classList.remove("launch")
 
 
 </body>
-
 </html>
