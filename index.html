@@ -1,140 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>DevOps Deployment Portal</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Deployment Portal</title>
 
 <style>
 
-/* SAME PREVIOUS CSS */
-
-body {
-margin:0;
-font-family: "Segoe UI", sans-serif;
+body{
+font-family:Segoe UI;
+background:linear-gradient(135deg,#141e30,#243b55);
 height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-background: linear-gradient(-45deg,#0f2027,#203a43,#2c5364,#1c1c1c);
-background-size:400% 400%;
-animation:bg 10s ease infinite;
-overflow:hidden;
-}
-
-@keyframes bg {
-0%{background-position:0% 50%}
-50%{background-position:100% 50%}
-100%{background-position:0% 50%}
-}
-
-.container {
-background: rgba(255,255,255,0.05);
-border-radius:20px;
-padding:40px;
-width:380px;
-backdrop-filter: blur(20px);
-box-shadow:0 0 40px rgba(0,255,255,0.2);
 color:white;
-animation:fade 1s;
+margin:0;
+}
+
+.box{
+
+background:rgba(255,255,255,0.05);
+padding:40px;
+border-radius:15px;
+backdrop-filter:blur(15px);
+box-shadow:0 0 25px cyan;
+width:350px;
+animation:fade 0.6s;
+
 }
 
 @keyframes fade{
+
 from{opacity:0; transform:translateY(20px)}
 to{opacity:1; transform:translateY(0)}
+
 }
 
-h1{
-text-align:center;
-margin-bottom:20px;
-background: linear-gradient(90deg,#00ffe7,#00c3ff);
--webkit-background-clip:text;
-color:transparent;
-}
+input{
 
-.input-group{
-position:relative;
-margin-bottom:20px;
-}
-
-input, select{
 width:100%;
 padding:12px;
+margin-top:15px;
 border:none;
 border-radius:8px;
 background:rgba(255,255,255,0.1);
 color:white;
-outline:none;
+
 }
 
 button{
+
 width:100%;
 padding:12px;
+margin-top:20px;
 border:none;
 border-radius:8px;
-margin-top:10px;
-font-size:15px;
-cursor:pointer;
-background: linear-gradient(90deg,#00ffe7,#00c3ff);
-color:black;
+background:linear-gradient(90deg,cyan,#00ffe7);
 font-weight:bold;
+cursor:pointer;
 transition:0.3s;
+
 }
 
 button:hover{
+
 transform:scale(1.05);
-box-shadow:0 0 20px #00ffe7;
-}
-
-.logout{
-background: linear-gradient(90deg,#ff416c,#ff4b2b);
-color:white;
-}
-
-.status{
-margin-top:20px;
-padding:15px;
-border-radius:10px;
-background:rgba(0,0,0,0.4);
-}
-
-.hidden{
-display:none;
-}
-
-
-/* 🚀 ROCKET CSS */
-
-.rocket {
-
-position:absolute;
-bottom:-100px;
-left:50%;
-transform:translateX(-50%);
-font-size:70px;
-opacity:0;
-transition: all 2s ease;
+box-shadow:0 0 15px cyan;
 
 }
 
-.launch {
+#msg{
 
-bottom:120%;
-opacity:1;
+margin-top:15px;
+color:red;
 
 }
-
 
 </style>
+
 </head>
+
 <body>
 
 
-<!-- LOGIN -->
+<div class="box">
 
-<div class="container" id="loginBox">
-
-<h1>DevOps Portal</h1>
+<h2>DevOps Login</h2>
 
 <input id="username" placeholder="Username">
 
@@ -142,61 +92,32 @@ opacity:1;
 
 <button onclick="login()">Login</button>
 
-<p id="loginMsg"></p>
+<p id="msg"></p>
 
 </div>
-
-
-<!-- DASHBOARD -->
-
-<div class="container hidden" id="dashboard">
-
-<h1>Deployment</h1>
-
-<select id="pipeline"></select>
-
-<button onclick="deploy()">Deploy</button>
-
-<button onclick="status()">Check Status</button>
-
-<button class="logout" onclick="logout()">Logout</button>
-
-<div class="status" id="result"></div>
-
-</div>
-
-
-<!-- ROCKET -->
-
-<div class="rocket" id="rocket">🚀</div>
 
 
 <script>
 
+const URL="YOUR_LAMBDA_URL"
 
-const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/"
-
-
-let USER=""
-let PASS=""
-
-
-// LOGIN
 
 function login(){
 
-USER=username.value
-PASS=password.value
+let username=document.getElementById("username").value
+let password=document.getElementById("password").value
+
 
 fetch(URL,{
 
 method:"POST",
+
 headers:{"Content-Type":"application/json"},
 
 body:JSON.stringify({
 
-username:USER,
-password:PASS,
+username:username,
+password:password,
 action:"list"
 
 })
@@ -205,139 +126,29 @@ action:"list"
 
 .then(res=>{
 
+
 if(res.status==401){
 
-loginMsg.innerHTML="Invalid Login"
+msg.innerHTML="Invalid Username or Password"
 return
 
 }
 
-return res.json()
 
-})
+// Save login
 
-.then(data=>{
+localStorage.setItem("username",username)
+localStorage.setItem("password",password)
 
-if(!data) return
 
-loginBox.classList.add("hidden")
-dashboard.classList.remove("hidden")
+// Redirect to dashboard
 
-pipeline.innerHTML=""
+window.location="dashboard.html"
 
-data.forEach(p=>{
-
-let option=document.createElement("option")
-option.value=p
-option.text=p
-pipeline.add(option)
-
-})
 
 })
 
 }
-
-
-// 🚀 DEPLOY WITH ROCKET
-
-function deploy(){
-
-result.innerHTML="Deploying..."
-
-
-fetch(URL,{
-
-method:"POST",
-
-headers:{"Content-Type":"application/json"},
-
-body:JSON.stringify({
-
-username:USER,
-password:PASS,
-action:"build",
-pipeline:pipeline.value
-
-})
-
-})
-
-.then(res=>res.text())
-
-.then(data=>{
-
-result.innerHTML=data
-
-launchRocket()
-
-})
-
-}
-
-
-// ROCKET FUNCTION
-
-function launchRocket(){
-
-let rocket=document.getElementById("rocket")
-
-rocket.classList.add("launch")
-
-setTimeout(()=>{
-
-rocket.classList.remove("launch")
-
-},3000)
-
-}
-
-
-// STATUS
-
-function status(){
-
-fetch(URL,{
-
-method:"POST",
-
-headers:{"Content-Type":"application/json"},
-
-body:JSON.stringify({
-
-username:USER,
-password:PASS,
-action:"status",
-pipeline:pipeline.value
-
-})
-
-})
-
-.then(res=>res.json())
-
-.then(data=>{
-
-result.innerHTML=
-
-"Pipeline: "+data.pipeline+
-"<br>Build: "+data.build+
-"<br>Status: "+data.status
-
-})
-
-}
-
-
-// LOGOUT
-
-function logout(){
-
-dashboard.classList.add("hidden")
-loginBox.classList.remove("hidden")
-
-}
-
 
 </script>
 
