@@ -1,128 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Deployment Dashboard</title>
-
-<style>
-
-body{
-font-family:Segoe UI;
-background:linear-gradient(135deg,#0f2027,#203a43);
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-color:white;
-margin:0;
-}
-
-.box{
-background:rgba(255,255,255,0.05);
-padding:40px;
-border-radius:15px;
-box-shadow:0 0 25px cyan;
-width:420px;
-}
-
-select,button{
-width:100%;
-padding:12px;
-margin-top:15px;
-border:none;
-border-radius:8px;
-}
-
-button{
-background:cyan;
-font-weight:bold;
-cursor:pointer;
-}
-
-button:hover{
-box-shadow:0 0 15px cyan;
-}
-
-/* Progress Bar */
-
-.progress-container{
-
-width:100%;
-background:#333;
-border-radius:10px;
-margin-top:20px;
-overflow:hidden;
-
-}
-
-.progress-bar{
-
-width:0%;
-height:20px;
-background:orange;
-transition:width 0.5s;
-
-}
-
-/* Rocket */
-
-.rocket{
-
-position:absolute;
-bottom:-100px;
-left:50%;
-transform:translateX(-50%);
-font-size:60px;
-transition: all 2s ease;
-opacity:0;
-
-}
-
-.launch{
-
-bottom:120%;
-opacity:1;
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-
-<div class="box">
-
-<h2>Deployment Dashboard</h2>
-
-<select id="pipeline"></select>
-
-<button onclick="deploy()">🚀 Deploy</button>
-
-<button onclick="status()">Check Status</button>
-
-<button onclick="logout()">Logout</button>
-
-
-<div class="progress-container">
-
-<div class="progress-bar" id="progressBar"></div>
-
-</div>
-
-
-<p id="result"></p>
-
-</div>
-
-
-<div class="rocket" id="rocket">🚀</div>
-
-
-
 <script>
 
-const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/ "
+// ✅ FIX 1: Removed extra space from URL
+
+const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/"
 
 
 let username=localStorage.getItem("username")
@@ -134,6 +14,7 @@ if(!username){
 window.location="index.html"
 
 }
+
 
 
 // Load pipelines
@@ -158,6 +39,8 @@ action:"list"
 
 .then(data=>{
 
+pipeline.innerHTML=""
+
 data.forEach(p=>{
 
 let option=document.createElement("option")
@@ -174,11 +57,11 @@ pipeline.add(option)
 
 
 
-// Deploy Pipeline
+// 🚀 Deploy Pipeline
 
 function deploy(){
 
-result.innerHTML="Starting Build..."
+result.innerHTML="⏳ Starting Build..."
 
 progressBar.style.width="10%"
 progressBar.style.background="orange"
@@ -211,7 +94,8 @@ checkProgress()
 
 
 
-// Check progress continuously
+
+// ✅ FIXED progress checker
 
 function checkProgress(){
 
@@ -245,20 +129,21 @@ pipeline:pipeline.value
 
 if(data.status==null){
 
-progress+=10
-
 if(progress<90){
+
+progress+=10
 
 progressBar.style.width=progress+"%"
 
 }
 
-result.innerHTML="Build Running..."
+result.innerHTML="⏳ Build Running..."
 
 }
 
 
 else{
+
 
 clearInterval(interval)
 
@@ -270,17 +155,26 @@ if(data.status=="SUCCESS"){
 
 progressBar.style.background="green"
 
-result.innerHTML="Build Success"
+result.innerHTML="✅ Build Success"
 
 launchRocket()
 
 }
 
-else{
+
+else if(data.status=="FAILED"){
 
 progressBar.style.background="red"
 
-result.innerHTML="Build Failed"
+result.innerHTML="❌ Build Failed"
+
+}
+
+else{
+
+progressBar.style.background="orange"
+
+result.innerHTML="⏳ Still Running"
 
 }
 
@@ -293,18 +187,76 @@ result.innerHTML="Build Failed"
 
 },3000)
 
-
 }
 
 
 
-// Manual status button
+
+// ✅ FIX 2: Proper status button
 
 function status(){
 
-checkProgress()
+result.innerHTML="Checking Status..."
+
+progressBar.style.width="40%"
+progressBar.style.background="orange"
+
+
+fetch(URL,{
+
+method:"POST",
+
+headers:{"Content-Type":"application/json"},
+
+body:JSON.stringify({
+
+username:username,
+password:password,
+action:"status",
+pipeline:pipeline.value
+
+})
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+
+progressBar.style.width="100%"
+
+
+if(data.status=="SUCCESS"){
+
+progressBar.style.background="green"
+
+result.innerHTML="✅ Build Success"
+
+launchRocket()
 
 }
+
+else if(data.status=="FAILED"){
+
+progressBar.style.background="red"
+
+result.innerHTML="❌ Build Failed"
+
+}
+
+else{
+
+progressBar.style.background="orange"
+
+result.innerHTML="⏳ Build Running"
+
+}
+
+})
+
+}
+
 
 
 
@@ -324,6 +276,7 @@ rocket.classList.remove("launch")
 
 
 
+
 // Logout
 
 function logout(){
@@ -336,7 +289,3 @@ window.location="index.html"
 
 
 </script>
-
-
-</body>
-</html>
