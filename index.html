@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>Deployment Dashboard</title>
+
+<style>
+
+body{
+font-family: Arial;
+background: #f4f6f8;
+}
+
+.box{
+
+width:400px;
+margin:auto;
+margin-top:100px;
+padding:20px;
+background:white;
+box-shadow:0px 0px 10px gray;
+
+}
+
+input, select, button{
+
+width:100%;
+padding:10px;
+margin-top:10px;
+
+}
+
+button{
+
+background:#007bff;
+color:white;
+border:none;
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#0056b3;
+
+}
+
+.logout{
+
+background:red;
+
+}
+
+.logout:hover{
+
+background:darkred;
+
+}
+
+#dashboard{
+
+display:none;
+
+}
+
+#result{
+
+margin-top:15px;
+font-weight:bold;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- LOGIN BOX -->
+
+<div class="box" id="loginBox">
+
+<h2>Login</h2>
+
+<input id="username" placeholder="Username">
+
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<p id="loginMsg" style="color:red;"></p>
+
+</div>
+
+
+
+<!-- DASHBOARD -->
+
+<div class="box" id="dashboard">
+
+<h2>Deployment Dashboard</h2>
+
+<select id="pipeline"></select>
+
+<button onclick="deploy()">Deploy Pipeline</button>
+
+<button onclick="getStatus()">Check Status</button>
+
+<button class="logout" onclick="logout()">Logout</button>
+
+<p id="result"></p>
+
+</div>
+
+
+
+<script>
+
+
+// REPLACE THIS WITH YOUR LAMBDA FUNCTION URL
+
+const URL = "https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/";
+
+
+
+let USER="";
+let PASS="";
+
+
+
+// LOGIN FUNCTION
+
+function login(){
+
+USER = document.getElementById("username").value;
+
+PASS = document.getElementById("password").value;
+
+
+fetch(URL,{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+username:USER,
+password:PASS,
+action:"list"
+
+})
+
+})
+
+.then(res=>{
+
+
+if(res.status==401){
+
+document.getElementById("loginMsg").innerText="Invalid Login";
+
+return;
+
+}
+
+
+return res.json();
+
+})
+
+.then(data=>{
+
+
+if(!data) return;
+
+
+// hide login
+
+document.getElementById("loginBox").style.display="none";
+
+
+// show dashboard
+
+document.getElementById("dashboard").style.display="block";
+
+
+// load pipelines
+
+let dropdown = document.getElementById("pipeline");
+
+dropdown.innerHTML="";
+
+
+data.forEach(function(p){
+
+let option=document.createElement("option");
+
+option.value=p;
+
+option.text=p;
+
+dropdown.add(option);
+
+});
+
+
+});
+
+}
+
+
+
+// DEPLOY FUNCTION
+
+function deploy(){
+
+
+let pipeline=document.getElementById("pipeline").value;
+
+
+document.getElementById("result").innerText="Starting build...";
+
+
+fetch(URL,{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+username:USER,
+password:PASS,
+action:"build",
+pipeline:pipeline
+
+})
+
+})
+
+.then(res=>res.text())
+
+.then(data=>{
+
+document.getElementById("result").innerText=data;
+
+});
+
+}
+
+
+
+// STATUS FUNCTION
+
+function getStatus(){
+
+
+let pipeline=document.getElementById("pipeline").value;
+
+
+document.getElementById("result").innerText="Checking status...";
+
+
+fetch(URL,{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+username:USER,
+password:PASS,
+action:"status",
+pipeline:pipeline
+
+})
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+
+document.getElementById("result").innerHTML=
+
+"Pipeline: "+data.pipeline+
+
+"<br>Build Number: "+data.build+
+
+"<br>Status: "+data.status;
+
+
+});
+
+}
+
+
+
+// LOGOUT
+
+function logout(){
+
+
+USER="";
+PASS="";
+
+
+document.getElementById("dashboard").style.display="none";
+
+document.getElementById("loginBox").style.display="block";
+
+document.getElementById("result").innerHTML="";
+
+
+}
+
+
+</script>
+
+
+
+</body>
+
+</html>
