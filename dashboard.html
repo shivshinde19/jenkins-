@@ -2,74 +2,114 @@
 <html>
 <head>
 
-<title>Production Deployment Portal</title>
+<title>Deployment Portal</title>
 
 <style>
 
 body{
-margin:0;
-font-family:Segoe UI;
+
 background:#0d1117;
 color:white;
+font-family:Segoe UI;
+margin:0;
+
 }
 
 .header{
+
 background:#161b22;
 padding:15px;
+font-size:20px;
+
 }
 
 .container{
+
 width:900px;
 margin:auto;
-margin-top:20px;
+margin-top:30px;
+
 }
 
 .card{
+
 background:#161b22;
 padding:20px;
-margin-top:15px;
+border-radius:8px;
+
 }
+
+
+/* ✅ FIXED SELECT DROPDOWN */
+
+select{
+
+width:350px;              /* IMPORTANT */
+padding:12px;
+font-size:15px;
+background:#0d1117;
+color:white;
+border:1px solid #30363d;
+border-radius:6px;
+
+}
+
+
+/* BUTTON */
 
 button{
+
+padding:12px 20px;
 background:#238636;
 color:white;
-padding:10px;
 border:none;
+margin-left:10px;
+border-radius:6px;
 cursor:pointer;
+
 }
+
 
 button:hover{
+
 background:#2ea043;
+
 }
 
+
+/* PROGRESS BAR */
+
 .progress{
-width:100%;
+
 height:20px;
-background:#333;
-margin-top:10px;
+background:#30363d;
+margin-top:20px;
+border-radius:10px;
+
 }
 
 .bar{
+
 height:20px;
 width:0%;
 background:orange;
+border-radius:10px;
+
 }
 
-.success{
-background:#238636;
-}
 
-.failed{
-background:#da3633;
-}
+/* LOGS */
 
 #logs{
+
 background:black;
 height:350px;
 overflow:auto;
+margin-top:20px;
 padding:10px;
-margin-top:10px;
 font-size:12px;
+border-radius:6px;
+
 }
 
 </style>
@@ -77,6 +117,7 @@ font-size:12px;
 </head>
 
 <body>
+
 
 <div class="header">
 
@@ -90,63 +131,118 @@ font-size:12px;
 
 <div class="card">
 
-<select id="pipeline"></select>
+
+<select id="pipeline">
+
+<option>Loading pipelines...</option>
+
+</select>
+
 
 <button onclick="deploy()">Deploy</button>
 
 <button onclick="checkStatus()">Status</button>
 
-<button onclick="startLogs()">Live Logs</button>
+<button onclick="liveLogs()">Live Logs</button>
+
 
 
 <div class="progress">
 
-<div class="bar" id="bar"></div>
+<div id="bar" class="bar"></div>
 
 </div>
 
 
-<div id="status"></div>
+<p id="status"></p>
+
 
 </div>
 
 
-<div class="card">
+
+<div class="card" style="margin-top:20px;">
+
 
 <h3>Console Logs</h3>
 
+
 <div id="logs"></div>
 
+
 </div>
 
 
 </div>
+
 
 
 <script>
+
 
 const URL="https://kenbihqf3eapckd6kcldwd7ndm0prgtx.lambda-url.us-east-1.on.aws/"
 
 
 let username=localStorage.getItem("username")
+
 let password=localStorage.getItem("password")
 
 let pointer=0
+
 let running=false
 
 
-// LOAD PIPELINES
+
+// ✅ LOAD PIPELINES
 
 fetch(URL,{
+
 method:"POST",
-headers:{"Content-Type":"application/json"},
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
 body:JSON.stringify({
-username,password,action:"list"
+
+username:username,
+
+password:password,
+
+action:"list"
+
 })
+
 })
+
 .then(res=>res.json())
+
 .then(data=>{
-data.forEach(p=>pipeline.add(new Option(p,p)))
+
+
+pipeline.innerHTML=""
+
+
+data.forEach(p=>{
+
+
+let option=document.createElement("option")
+
+
+option.value=p
+
+
+option.text=p
+
+
+pipeline.appendChild(option)
+
+
+})
+
+
 })
 
 
@@ -156,21 +252,34 @@ data.forEach(p=>pipeline.add(new Option(p,p)))
 
 function deploy(){
 
-status.innerHTML="Starting build"
 
-bar.style.width="10%"
+bar.style.width="20%"
+
 
 fetch(URL,{
+
 method:"POST",
+
 headers:{"Content-Type":"application/json"},
+
 body:JSON.stringify({
-username,password,action:"build",pipeline:pipeline.value
-})
+
+username,password,
+
+action:"build",
+
+pipeline:pipeline.value
+
 })
 
-startLogs()
+})
+
+
+liveLogs()
+
 
 }
+
 
 
 
@@ -178,97 +287,158 @@ startLogs()
 
 function checkStatus(){
 
+
 fetch(URL,{
+
 method:"POST",
+
 headers:{"Content-Type":"application/json"},
+
 body:JSON.stringify({
-username,password,action:"status",pipeline:pipeline.value
+
+username,password,
+
+action:"status",
+
+pipeline:pipeline.value
+
 })
+
 })
+
 .then(res=>res.json())
+
 .then(data=>{
+
 
 if(data.status=="SUCCESS"){
 
+
 bar.style.width="100%"
-bar.className="bar success"
+
+
+bar.style.background="green"
+
 
 status.innerHTML="SUCCESS"
 
+
 }
+
 
 else if(data.status=="FAILED"){
 
+
 bar.style.width="100%"
-bar.className="bar failed"
+
+
+bar.style.background="red"
+
 
 status.innerHTML="FAILED"
 
+
 }
+
 
 else{
 
-bar.style.width="60%"
+
 status.innerHTML="RUNNING"
 
+
 }
+
 
 })
 
+
 }
+
 
 
 
 // LIVE LOG STREAM
 
-function startLogs(){
+function liveLogs(){
+
 
 pointer=0
+
+
 logs.innerHTML=""
+
+
 running=true
+
 
 stream()
 
+
 }
+
 
 
 function stream(){
 
-if(!running) return
+
+if(!running)return
 
 
 fetch(URL,{
+
 method:"POST",
+
 headers:{"Content-Type":"application/json"},
+
 body:JSON.stringify({
+
 username,password,
+
 action:"console",
+
 pipeline:pipeline.value,
+
 start:pointer
+
 })
+
 })
+
 .then(res=>res.json())
+
 .then(data=>{
+
 
 logs.innerHTML+=data.text
 
+
 logs.scrollTop=logs.scrollHeight
+
 
 pointer=data.size
 
+
 if(data.more=="true")
+
 
 setTimeout(stream,2000)
 
+
 else{
+
 
 running=false
 
+
 checkStatus()
+
 
 }
 
+
 })
+
 
 }
 
@@ -277,4 +447,5 @@ checkStatus()
 
 
 </body>
+
 </html>
